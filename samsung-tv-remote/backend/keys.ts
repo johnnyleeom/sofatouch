@@ -1,0 +1,1 @@
+export const commands = ["KEY_VOLUP", "KEY_VOLDOWN"]
