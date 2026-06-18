@@ -27,11 +27,12 @@ function App() {
     console.log(res.message);
   }
 
+  // for commands (vol_up, vol_down, etc)
   async function handleClick(input) {
     setCmd(input);
     console.log("User Requested", input);
 
-    const response = await fetch("http://localhost:3000/control/volume", {
+    const response = await fetch("http://localhost:3000/control/command", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -42,7 +43,7 @@ function App() {
     });
 
     const res = await response.json();
-    console.log(res.message)
+    console.log(res.message);
   }
 
   const handleDisconnect = async () => {
@@ -86,6 +87,38 @@ function App() {
         <button onClick={() => handleClick("KEY_VOLDOWN")} style={s.volBtn}>
           －
         </button>
+
+        <div style={s.divider} />
+
+        {/* D-Pad */}
+        <div style={s.dpad}>
+          {/* Up */}
+          <div style={s.dpadRow}>
+            <button onClick={() => handleClick("KEY_UP")} style={s.dpadBtn}>
+              ▲
+            </button>
+          </div>
+
+          {/* Left / OK / Right */}
+          <div style={s.dpadRow}>
+            <button onClick={() => handleClick("KEY_LEFT")} style={s.dpadBtn}>
+              ◀
+            </button>
+            <button onClick={() => handleClick("KEY_ENTER")} style={s.okBtn}>
+              OK
+            </button>
+            <button onClick={() => handleClick("KEY_RIGHT")} style={s.dpadBtn}>
+              ▶
+            </button>
+          </div>
+
+          {/* Down */}
+          <div style={s.dpadRow}>
+            <button onClick={() => handleClick("KEY_DOWN")} style={s.dpadBtn}>
+              ▼
+            </button>
+          </div>
+        </div>
 
         <div style={s.divider} />
 
@@ -159,6 +192,42 @@ const s: Record<string, React.CSSProperties> = {
     color: "#ccc",
     fontSize: 22,
     cursor: "pointer",
+  },
+  dpad: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
+  },
+  dpadRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  dpadBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    background: "#252528",
+    border: "1px solid #383840",
+    color: "#ccc",
+    fontSize: 14,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  okBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    background: "#2e2e38",
+    border: "1px solid #4a4a58",
+    color: "#e0e0e0",
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    letterSpacing: "0.04em",
   },
   disconnectBtn: {
     width: "100%",

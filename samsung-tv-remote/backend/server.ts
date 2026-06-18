@@ -46,7 +46,6 @@ app.post("/api/connect", async (req: any, res: any) => {
 });
 
 app.post("/api/disconnect", async (req: any, res: any) => {
-  console.log("Disconnection hit");
   if (!tvSocket) {
     return res.status(400).json({
       success: false,
@@ -66,7 +65,7 @@ app.post("/api/disconnect", async (req: any, res: any) => {
   });
 });
 
-app.post("/control/volume", async (req: any, res: any) => {
+app.post("/control/command", async (req: any, res: any) => {
   try {
     if (!tvSocket || tvSocket.readyState !== WebSocket.OPEN) {
       return res.status(400).json({
