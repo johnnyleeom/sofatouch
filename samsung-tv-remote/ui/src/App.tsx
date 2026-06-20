@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRef } from "react";
 
 function App() {
   const [ip, setIp] = useState("");
@@ -6,56 +7,83 @@ function App() {
   const [submittedIp, setSubmittedIp] = useState("");
   //eslint-disable-next-line
   const [cmd, setCmd] = useState("");
+  //eslint-disable-next-line
+  const [status, setStatus] = useState("");
+
+  const wsRef = useRef<WebSocket | null>(null);
 
   //for ip
-  async function handleSubmit(event) {
+  function handleSubmit(event) {
     event.preventDefault();
     setSubmittedIp(ip);
     console.log(ip);
 
-    const response = await fetch("http://localhost:3000/api/connect", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        ip: ip,
-      }),
-    });
+    const tvIP = ip;
+    const url = `wss://${tvIP}:8002/api/v2/channels/samsung.remote.control?name=U29mYVR5cGU=`;
 
-    const res = await response.json();
-    console.log(res.message);
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("Direct browser WebSocket connected");
+      setStatus("TV Connected");
+    };
+
+    ws.onmessage = (event) => {
+      console.log("TV message:", event.data);
+    };
+
+    ws.onerror = (error) => {
+      console.log("Direct browser WebSocket error:", error);
+    };
+
+    ws.onclose = (event) => {
+      console.log("WebSocket closed:", event.code, event.reason);
+      setStatus("TV Closed");
+    };
   }
 
   // for commands (vol_up, vol_down, etc)
-  async function handleClick(input) {
+  function handleClick(input) {
     setCmd(input);
     console.log("User Requested", input);
 
-    const response = await fetch("http://localhost:3000/control/command", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        command: input,
-      }),
-    });
+    const ws = wsRef.current;
 
-    const res = await response.json();
-    console.log(res.message);
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      console.log("WebSocket not opened");
+      setStatus("TV is not connected");
+      return;
+    }
+
+    const payload = {
+      method: "ms.remote.control",
+      params: {
+        Cmd: "Click",
+        DataOfCmd: input,
+        Option: "false",
+        TypeOfRemote: "SendRemoteKey",
+      },
+    };
+
+    try {
+      ws.send(JSON.stringify(payload));
+    } catch (err) {
+      console.log(err);
+    }
   }
 
-  const handleDisconnect = async () => {
-    const response = await fetch("http://localhost:3000/api/disconnect", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+  // function for disconnecting
+  const handleDisconnect = () => {
+    const ws = wsRef.current;
 
-    const res = await response.json();
-    console.log(res.message);
+    if (!ws) {
+      console.log("No WebSocket to close");
+      return;
+    }
+
+    ws.close();
+    wsRef.current = null;
   };
 
   return (
@@ -77,6 +105,16 @@ function App() {
         </form>
 
         <div style={s.divider} />
+
+        {/* Home / Back */}
+        <div style={s.row}>
+          <button onClick={() => handleClick("KEY_HOME")} style={s.smallBtn}>
+            Home
+          </button>
+          <button onClick={() => handleClick("KEY_RETURN")} style={s.smallBtn}>
+            Back
+          </button>
+        </div>
 
         {/* Vol Up */}
         <button onClick={() => handleClick("KEY_VOLUP")} style={s.volBtn}>
@@ -182,6 +220,21 @@ const s: Record<string, React.CSSProperties> = {
     width: "60%",
     height: 1,
     background: "#2a2a30",
+  },
+  row: {
+    width: "100%",
+    display: "flex",
+    gap: 8,
+  },
+  smallBtn: {
+    flex: 1,
+    height: 38,
+    borderRadius: 10,
+    background: "#252528",
+    border: "1px solid #383840",
+    color: "#ccc",
+    fontSize: 12,
+    cursor: "pointer",
   },
   volBtn: {
     width: "100%",
