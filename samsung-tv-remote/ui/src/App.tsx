@@ -1,24 +1,21 @@
-import { useState } from "react";
+import { useState} from "react";
 import { useRef } from "react";
 
 function App() {
-  const [ip, setIp] = useState("");
-  //eslint-disable-next-line
-  const [submittedIp, setSubmittedIp] = useState("");
-  //eslint-disable-next-line
-  const [cmd, setCmd] = useState("");
-  //eslint-disable-next-line
-  const [status, setStatus] = useState("");
+  const [ip, setIp] = useState(() => {
+    return localStorage.getItem("savedIP") || ""
+  });
 
   const wsRef = useRef<WebSocket | null>(null);
 
   //for ip
-  function handleSubmit(event) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+
     event.preventDefault();
-    setSubmittedIp(ip);
     console.log(ip);
 
-    const tvIP = ip;
+    const tvIP = ip.trim();
+    localStorage.setItem("savedIP", tvIP);
     const url = `wss://${tvIP}:8002/api/v2/channels/samsung.remote.control?name=U29mYVR5cGU=`;
 
     const ws = new WebSocket(url);
@@ -26,7 +23,6 @@ function App() {
 
     ws.onopen = () => {
       console.log("Direct browser WebSocket connected");
-      setStatus("TV Connected");
     };
 
     ws.onmessage = (event) => {
@@ -39,20 +35,17 @@ function App() {
 
     ws.onclose = (event) => {
       console.log("WebSocket closed:", event.code, event.reason);
-      setStatus("TV Closed");
     };
   }
 
   // for commands (vol_up, vol_down, etc)
-  function handleClick(input) {
-    setCmd(input);
+  function handleClick(input: string) {
     console.log("User Requested", input);
 
     const ws = wsRef.current;
 
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       console.log("WebSocket not opened");
-      setStatus("TV is not connected");
       return;
     }
 
@@ -94,7 +87,7 @@ function App() {
           <input
             name="ip"
             type="text"
-            placeholder="IP address of the TV"
+            placeholder= "Tv IP Address"
             onChange={(event) => setIp(event.target.value)}
             value={ip}
             style={s.input}
